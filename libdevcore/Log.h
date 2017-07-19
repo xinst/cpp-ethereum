@@ -25,22 +25,13 @@
 
 #include <ctime>
 #include <chrono>
+#include <string>
 #include "CommonIO.h"
-#include "CommonData.h"
 #include "FixedHash.h"
 #include "Terminal.h"
 
-namespace boost { namespace asio { namespace ip { template<class T>class basic_endpoint; class tcp; } } }
-
 namespace dev
 {
-
-/// The null output stream. Used when logging is disabled.
-class NullOutputStream
-{
-public:
-	template <class T> NullOutputStream& operator<<(T const&) { return *this; }
-};
 
 /// A simple log-output function that prints log messages to stdout.
 void debugOut(std::string const& _s);
@@ -165,9 +156,9 @@ public:
 	void append(u160 const& _t) { m_sstr << EthNavy << _t << EthReset; }
 	void append(double _t) { m_sstr << EthBlue << _t << EthReset; }
 	template <unsigned N> void append(FixedHash<N> const& _t) { m_sstr << EthTeal "#" << _t.abridged() << EthReset; }
-	void append(h160 const& _t) { m_sstr << EthRed "@" << _t.abridged() << EthReset; }
-	void append(h256 const& _t) { m_sstr << EthCyan "#" << _t.abridged() << EthReset; }
-	void append(h512 const& _t) { m_sstr << EthTeal "##" << _t.abridged() << EthReset; }
+	void append(h160 const& _t) { m_sstr << EthRed "@" << _t.h160::abridged() << EthReset; }
+	void append(h256 const& _t) { m_sstr << EthCyan "#" << _t.h256::abridged() << EthReset; }
+	void append(h512 const& _t) { m_sstr << EthTeal "##" << _t.h512::abridged() << EthReset; }
 	void append(std::string const& _t) { m_sstr << EthGreen "\"" + _t + "\"" EthReset; }
 	void append(bytes const& _t) { m_sstr << EthYellow "%" << toHex(_t) << EthReset; }
 	void append(bytesConstRef _t) { m_sstr << EthYellow "%" << toHex(_t) << EthReset; }
@@ -175,7 +166,7 @@ public:
 	{
 		m_sstr << EthWhite "[" EthReset;
 		int n = 0;
-		for (auto const& i: _t)
+		for (T const& i: _t)
 		{
 			m_sstr << (n++ ? EthWhite ", " EthReset : "");
 			append(i);
@@ -186,7 +177,7 @@ public:
 	{
 		m_sstr << EthYellow "{" EthReset;
 		int n = 0;
-		for (auto const& i: _t)
+		for (T const& i: _t)
 		{
 			m_sstr << (n++ ? EthYellow ", " EthReset : "");
 			append(i);
@@ -210,7 +201,7 @@ public:
 	{
 		m_sstr << EthYellow "{" EthReset;
 		int n = 0;
-		for (auto const& i: _t)
+		for (T const& i: _t)
 		{
 			m_sstr << (n++ ? EthYellow ", " EthReset : "");
 			append(i);
@@ -237,6 +228,10 @@ public:
 		m_sstr << EthPurple ", " EthReset;
 		append(_t.second);
 		m_sstr << EthPurple ")" EthReset;
+	}
+	template <class T> void append(const char* _t)
+	{
+		m_sstr << _t;
 	}
 	template <class T> void append(T const& _t)
 	{
@@ -265,6 +260,8 @@ public:
 	LogOutputStream& operator<<(std::string const& _t) { if (Id::verbosity <= g_logVerbosity) { if (_AutoSpacing && m_sstr.str().size() && m_sstr.str().back() != ' ') m_sstr << " "; comment(_t); } return *this; }
 
 	LogOutputStream& operator<<(LogTag _t) { m_logTag = _t; return *this; }
+
+	LogOutputStream& operator<<(const char* _t) { if (Id::verbosity <= g_logVerbosity) { if (_AutoSpacing && m_sstr.str().size() && m_sstr.str().back() != ' ') m_sstr << " "; append(_t); } return *this; }
 
 	/// Shift arbitrary data to the log. Spaces will be added between items as required.
 	template <class T> LogOutputStream& operator<<(T const& _t) { if (Id::verbosity <= g_logVerbosity) { if (_AutoSpacing && m_sstr.str().size() && m_sstr.str().back() != ' ') m_sstr << " "; append(_t); } return *this; }
@@ -298,10 +295,5 @@ public:
 #define cnote clog(dev::NoteChannel)
 #define cwarn clog(dev::WarnChannel)
 #define ctrace clog(dev::TraceChannel)
-
-// Null stream-like objects.
-#define ndebug DEV_STATEMENT_SKIP() dev::NullOutputStream()
-#define nlog(X) DEV_STATEMENT_SKIP() dev::NullOutputStream()
-#define nslog(X) DEV_STATEMENT_SKIP() dev::NullOutputStream()
 
 }

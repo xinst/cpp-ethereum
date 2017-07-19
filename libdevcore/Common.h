@@ -69,7 +69,7 @@ namespace dev
 
 extern char const* Version;
 
-static const std::string EmptyString;
+extern const std::string EmptyString;
 
 // Binary data types.
 using bytes = std::vector<byte>;
